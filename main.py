@@ -3,10 +3,15 @@
 import pygame
 from sys import exit
 
-from settings import Settings
-from sprites import Cursor, Player, Bots
-from bullet import Bullet, Cannon
-from handler import BotHandler
+from settings import Settings, Score
+from scene import SceneManager, Menu, Stage
+from player import CameraGroup, Cursor, Player
+from weapons import Cannon, CannonDefault, CannonRapid, CannonSpread
+from projectiles import PlayerProjectile as Bullet, BotProjectile
+from bots import Bots, BotsBig, BotsRanged
+from handler import BotHandler, Collisions
+from interface import UI
+from Particles import Particles
 
 # main loop
 
@@ -14,69 +19,57 @@ class Main:
     # main init
     def __init__(self):
         pygame.init()
-        self.clock = pygame.time.Clock() # ding ding ding tu tutu tutu  young fly on the track
+        pygame.display.set_caption("FORTNITRE")
+        self.clock = pygame.time.Clock() # ding ding ding tu tutu tutu  yung fly on the track
         self.gs = Settings() # game settings
         self.screen = pygame.display.set_mode((self.gs.SCREENWIDTH,self.gs.SCREENHEIGHT))
         self.surface1 = pygame.surface.Surface((self.gs.SCREENWIDTH,self.gs.SCREENHEIGHT))
+        self.load_save()
         self.frame_count = 0
-        self.load_main()
 
-    # load sprites,groups,methods,handlers,etc
-    def load_main(self):
-        # groups
-        self.bg = pygame.sprite.Group() # bullet group
-        self.bots_1 = pygame.sprite.Group() # bot group 1
-    
-        # Handlers and checkers
-        self.bh = BotHandler(self.screen, self.gs.SCREENSIZE, Bots, self.bots_1, self.gs.bot_speed, self.gs.bot_max_count, self.gs.bot_spawn_rate)
+        self.UI = UI(self.screen, self.gs.SCREENSIZE)
+        self.load_scenes()
 
-        self.player = Player(self.screen,"sprites/player_ship.png",self.gs.start_pos,self.gs.player_speed,self.gs.focus_speed,self.gs.shield)
-        self.cannon = Cannon(self.screen, Bullet, self.bg, self.gs.max_bullet_count )
+    #Init Scenes
+    def load_scenes(self):
+        self.SceneManager = SceneManager('Menu')
+        self.Menu = Menu(self.screen, self.SceneManager, self.gs, self.UI) # Menu screen
+        self.Stage = Stage(self.screen, self.SceneManager) # Stage / Gameplay screen
+        
+        self.scenes = {'Menu':self.Menu, 'Stage':self.Stage}
 
-
-    # load highscores, settings, yo mama
-    def __load_save(self):
+    def load_stage(self):
+        self.Stage.load_main(self.gs, Score, CameraGroup, Cursor, Player, Bots, BotsRanged, BotsBig, 
+                           Cannon, CannonDefault, CannonRapid, CannonSpread, Bullet, BotProjectile,
+                           BotHandler, Collisions, UI, Particles)
+    # load highscores
+    def load_save(self):
         return True
 
-    # self explanatory
-    def display_update(self):
-        self.surface1.fill("White")
-        self.screen.blit(self.surface1,(0,0))
-
-        self.player.update()
-        self.player.draw()
-
-        self.bh.spawn_bot(self.time_now)
-        self.bh.update_bot(self.player.center)
-
-        self.cannon.get_dirvect(self.player.dir)
-        if self.frame_count % 1 == 0:
-            self.cannon.fire_cannon(self.player.rect.center)
-
-        for bullet in self.bg:
-            bullet.update()
-            if not self.screen.get_rect().collidepoint(bullet.player_pos):
-                self.bg.remove(bullet)
-                
-        for bullet in self.bg:
-            bullet.draw(self.screen)
-        
     # main loop
     def run(self):
         while True:
-            self.time_now = pygame.time.get_ticks()
-
+            self.real_time = pygame.time.get_ticks()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-            
-            self.display_update()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        if self.SceneManager.get_scene() == 'Stage':
+                            self.Stage.pause = not self.Stage.pause
+
+            if self.Menu.load_stage:
+                self.load_stage()
+                self.Menu.load_stage = False
+            self.scenes[self.SceneManager.get_scene()].run()
+
             self.clock.tick(self.gs.tps)
             pygame.display.flip()
-            self.frame_count += 1
 
-        return True
+          
+
+
     
 if __name__ == "__main__":
     main = Main()
