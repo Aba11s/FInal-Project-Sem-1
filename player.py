@@ -78,6 +78,9 @@ class Player(Sprite):
         self.is_hit = False
         self.hit_time = 0
 
+        self.hit_sfx = pygame.mixer.Sound("sfx/player_hit.wav")
+        self.hit_sfx.set_volume(1.2)
+
     def animate_sprite(self):
         angle = -self.angle - 90
         if -22.5 <= angle < 22.5:
@@ -97,7 +100,7 @@ class Player(Sprite):
         elif -67.5 <= angle < -22.5:
             self.image = self.sprites[7]
 
-
+    # Player is invincible after getting hit
     def update_invincibilty(self):
         if self.is_hit:
             print("hit")
@@ -112,8 +115,8 @@ class Player(Sprite):
         if self.lives:
             self.lives -= 1
             self.is_hit = True
-            
-  
+            self.hit_sfx.play()
+
     # Checks for RMB click - activates focus mode
     def set_focused(self):
         if pygame.mouse.get_pressed()[2]:

@@ -6,8 +6,9 @@ from sys import exit
 ### START MENU ###
 class Menu():
     def __init__(self, screen, SceneManager,
-                 Settings, UI):
+                 Settings, UI, Score):
         self.screen = screen
+        self.Score = Score
         self.SceneManager = SceneManager
         self.gs = Settings
         self.UI = UI
@@ -15,6 +16,8 @@ class Menu():
         self.surface = pygame.Surface(self.gs.SCREENSIZE)
         self.menu_buttons = self.UI.draw_menu_buttons()
         self.load_stage = False
+
+        self.Score.import_highscore()
     
     def check_button_updates(self):
         for button in self.menu_buttons:
@@ -35,6 +38,7 @@ class Menu():
 
         self.check_button_updates()
         self.UI.draw_title(self.screen, self.UI.font_title)
+        self.UI.draw_highscore(self.screen, self.UI.font_text, self.Score.highscore)
         
 ### STAGE / GAMEPLAY SCENE ###
 class Stage:
@@ -45,7 +49,7 @@ class Stage:
     def load_main(self, Settings, Score, Camera, Cursor, Player, Bots, Ranged, Big, Cannon, CannonD, CannonR, CannonS, Bullet, Projectile,
                  BotHandler, Collisions, UI, Particles):
 
-        self.Score = Score(0, 0)
+        self.Score = Score
         self.gs = Settings
 
         ### Sprite Groups ###
@@ -88,7 +92,6 @@ class Stage:
         self.UI = UI(self.screen, self.gs.SCREENSIZE)
         
         ### Variables ###
-
         self.surface1 = pygame.surface.Surface(self.gs.SCREENSIZE)
         self.overlay = pygame.surface.Surface(self.gs.SCREENSIZE)
         self.overlay2 = pygame.surface.Surface(self.gs.SCREENSIZE)
@@ -96,15 +99,25 @@ class Stage:
         self.background = pygame.image.load("sprites/fuzzy_sky_background.png").convert_alpha()
         self.background = pygame.transform.scale_by(self.background, 1.5)
 
+        self.bg_music = pygame.mixer.Sound("sfx/apparitions_stalk_the_night.mp3") # Special Thanks to ZUN frfr
+        self.bg_music.set_volume(0.6)
+        self.lose_sfx = pygame.mixer.Sound("sfx/crowd_laughing.mp3")
+        self.playing_music = False
+
         self.pause_buttons = self.UI.draw_pause_buttons()
 
+        self.Score.import_highscore()
         self.score = 0
-        self.highscore = 0
         self.frame_count = 0
 
         self.time_now = 0
         self.time_paused = 0
         self.pause = False
+
+    def play_bg_music(self):
+        if not self.playing_music:
+            self.bg_music.play(-1)
+            self.playing_music = True
 
     def player_hit_warning(self):
         if self.Player.is_hit:
@@ -119,6 +132,8 @@ class Stage:
             if button == self.pause_buttons[0]:
                 if button.update(self.mouse_pos):
                     self.SceneManager.set_scene('Menu')
+                    self.playing_music = False
+                    self.bg_music.stop()
             elif button == self.pause_buttons[1]:
                 if button.update(self.mouse_pos):
                     self.pause = False
@@ -128,11 +143,14 @@ class Stage:
         self.mouse_pos = pygame.mouse.get_pos()
         self.time_now = pygame.time.get_ticks()
         if not self.pause and self.Player.lives:
+            self.play_bg_music()
             pygame.mouse.set_visible(False)
+
             self.time_now = pygame.time.get_ticks()
             self.surface1.fill("Yellow")
             self.screen.blit(self.surface1,(0,0))
             self.screen.blit(self.background, (0,0))
+
 
             # calls player updates
             self.Player.update()
@@ -141,7 +159,9 @@ class Stage:
             # calls bot updates
             self.BotHandler.spawn_default_bot(self.time_now, self.gs.bot_hitpoints, self.gs.bot_max_count, self.gs.bot_score_1)
             self.BotHandler.spawn_ranged_bot(self.gs.bot_speed_2, self.gs.bot_hitpoints_2, self.gs.bot_fire_rate_2, self.gs.bot_bullet_speed_2, 
-                                             self.gs.bot_spawn_rate_2, self.gs.bot_max_count_2, self.Projectile, self.gs.bot_score_1)
+                                             self.gs.bot_spawn_rate_2, self.gs.bot_max_count_2, self.Projectile, self.gs.bot_score_2)
+            self.BotHandler.spawn_big_bot(self.gs.bot_speed_3, self.gs.bot_hitpoints_3, self.gs.bot_fire_rate_3, self.gs.bot_bullet_speed_3,
+                                          self.gs.bot_spawn_rate_3, self.gs.bot_max_count_3, self.Projectile, self.gs.bot_score_3)
             self.BotHandler.update_bot(self.Player.center, self.frame_count)
 
             # calls cannon & bullet updates
@@ -175,15 +195,15 @@ class Stage:
 
         # Pauses Game
         else:
-            pygame.mouse.set_visible(True)
             if self.Player.lives:
+                pygame.mouse.set_visible(True)
                 # Pause Screen Overlay
                 if not self.switched: #Ensures only blitted once
                     self.overlay.fill("Black")
                     self.overlay.set_alpha(180)
                     self.screen.blit(self.overlay, (0,0))
+
                 self.switched = True
-                
                 self.UI.draw_pause_title(self.screen, self.UI.font_head)
                 self.check_button_updates()
 
@@ -195,11 +215,17 @@ class Stage:
                     self.overlay.fill("Black")
                     self.overlay.set_alpha(180)
                     self.screen.blit(self.overlay, (0,0))
+                    self.lose_sfx.play()
 
-                    self.UI.draw_lose_title(self.screen, self.UI.font_head, self.UI.font_subhead, self.UI.font_text, self.Score.score)
+                    self.Score.set_highscore()
+                    self.UI.draw_lose_title(self.screen, self.UI.font_head, self.UI.font_subhead, self.UI.font_text, self.Score.score, self.Score.highscore)
+                
                 self.switched = True
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
                     self.SceneManager.set_scene('Menu')
+                    self.lose_sfx.stop()
+                    self.bg_music.stop()
+                    self.playing_music = False
 
 ### SCENEMANAGER ###
 class SceneManager:

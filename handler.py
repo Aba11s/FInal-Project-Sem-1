@@ -42,6 +42,20 @@ class Collisions():
                 if bot not in bullet.collidewith:
                     bullet.hp -= 1
                     bullet.collidewith.append(bot)
+
+    def check_bullet_big_collisions(self):
+        collision = pygame.sprite.groupcollide(self.bullets, self.big, False, False)
+        for bullet, bot_list in collision.items():
+            for bot in bot_list:   
+                # Prevents bot and bullet from colliding more than once - theres probably a more efficient way *shrugs
+                if not bot.has_collided:
+                    bot.has_collided = True
+                if bullet not in bot.collidewith:
+                    bot.hp -= bullet.dmg
+                    bot.collidewith.append(bullet)
+                if bot not in bullet.collidewith:
+                    bullet.hp -= 1
+                    bullet.collidewith.append(bot)
     
     def check_player_bot_collision(self):
         collision = pygame.sprite.groupcollide(self.player_group, self.bots, False, False)
@@ -54,6 +68,11 @@ class Collisions():
             if not collideitem2[0].invincible:
                 collideitem2[0].hit()
 
+        collision3 = pygame.sprite.groupcollide(self.player_group, self.ranged, False, False)
+        for collideitem3 in collision3.items():
+            if not collideitem3[0].invincible:
+                collideitem3[0].hit()
+
     def check_player_projectile_collision(self):
         collision = pygame.sprite.groupcollide(self.player_group, self.bp, False, False)
         for collideitem in collision.items():
@@ -64,6 +83,7 @@ class Collisions():
         self.check_bullet_bot_collisions()
         self.check_player_bot_collision()
         self.check_bullet_ranged_collisions()
+        self.check_bullet_big_collisions()
         self.check_player_projectile_collision()
             
 
@@ -109,12 +129,23 @@ class BotHandler():
     def spawn_ranged_bot(self, bot_speed, hitpoints, fire_rate, bullet_speed, spawn_rate, ranged_bot_cap, BotBullets, ranged_score):
         delay = (1/spawn_rate)*1000
         if pygame.time.get_ticks() - self.last_spawned_r > delay:
-            print(pygame.time.get_ticks(),self.last_spawned_r, delay)
             if len(self.ranged_group) < ranged_bot_cap:
                 new_bot = self.BotsR(self.screen, bot_speed, self.set_spawn(), hitpoints, fire_rate, bullet_speed, BotBullets, ranged_score)
                 self.ranged_group.add(new_bot)
                 self.cg.add(new_bot)
                 self.last_spawned_r = pygame.time.get_ticks()
+
+    
+    def spawn_big_bot(self, bot_speed, hitpoints, fire_rate, bullet_speed, spawn_rate, big_bot_cap, BotBullets, ranged_score):
+        delay = (1/spawn_rate)*1000
+        if pygame.time.get_ticks() - self.last_spawned_r > delay:
+            if len(self.big_group) < big_bot_cap:
+                new_bot = self.BotsB(self.screen, bot_speed, self.set_spawn(), hitpoints, fire_rate, bullet_speed, BotBullets, ranged_score)
+                self.big_group.add(new_bot)
+                self.cg.add(new_bot)
+                self.last_spawned_r = pygame.time.get_ticks()
+
+        
 
     def update_bot(self,player_pos,frame_count):
         for bot in self.bot_group:
@@ -124,6 +155,12 @@ class BotHandler():
                 bot.kill()
 
         for bot in self.ranged_group:
+            bot.update(player_pos, frame_count,self.bot_projectiles)
+            if bot.hp <= 0:
+                self.Score.add_score(bot.score)
+                bot.kill()
+
+        for bot in self.big_group:
             bot.update(player_pos, frame_count,self.bot_projectiles)
             if bot.hp <= 0:
                 self.Score.add_score(bot.score)

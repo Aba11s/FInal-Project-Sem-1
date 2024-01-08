@@ -1,6 +1,7 @@
 # Settings
 
 import pygame
+import shelve
 
 class Settings:
     def __init__(self):
@@ -59,9 +60,9 @@ class Settings:
         self.bot_pos= self.start_pos
         
         # Default
-        self.bot_speed = 1.6
+        self.bot_speed = 1.4
         self.bot_speed_mp = 1.0
-        self.bot_max_count = 100
+        self.bot_max_count = 25
         self.bot_spawn_rate = 2
         self.bot_hitpoints = 40
         self.bot_score_1 = 100
@@ -69,28 +70,49 @@ class Settings:
         # Ranged
         self.bot_speed_2 = 0.6
         self.bot_speed_mp_2 = 1.0
-        self.bot_max_count_2 = 30
-        self.bot_spawn_rate_2 = 0.75
+        self.bot_max_count_2 = 10
+        self.bot_spawn_rate_2 = 0.5
         self.bot_hitpoints_2 = 40
         self.bot_fire_rate_2 = 0.3
         self.bot_bullet_speed_2 = 4
         self.bot_score_2 = 300
 
         # Big - DEPRACATED for now
-        self.bot_speed_3 = 1
+        self.bot_speed_3 = 0.4
         self.bot_speed_mp_3 = 1.0
-        self.bot_max_count_3 = 6
-        self.bot_spawn_rate_3 = 0.1
-        self.bot_hitpoints_3 = 150
+        self.bot_max_count_3 = 1
+        self.bot_spawn_rate_3 = 10
+        self.bot_hitpoints_3 = 200
+        self.bot_fire_rate_3 = 0.5
+        self.bot_bullet_speed_3 = 5
+        self.bot_score_3 = 2000
 
         self.dm = 1.0 # difficulty multiplier
     
 
 class Score():
-    def __init__(self, score,  highscore, score_mp = 1.0):
-        self.score = score
-        self.highscore = highscore
-    
+    def __init__(self):
+        self.score = 0
+
     def add_score(self, score):
         self.score += score
+
+    def set_highscore(self):
+        self.highscore = max(self.score,self.highscore)
+        d = shelve.open('score')
+        d['highscore'] = self.highscore
+        print(self.highscore)
+        d.close()
+
+    def import_highscore(self):
+        d = shelve.open('score')
+        try:
+            if d['highscore']:
+                 self.highscore = d['highscore']
+            else:
+                self.highscore = 0
+        except KeyError:
+            self.highscore = 0
+        d.close()
+
     

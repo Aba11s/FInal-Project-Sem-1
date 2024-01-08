@@ -24,7 +24,9 @@ class Main:
         self.gs = Settings() # game settings
         self.screen = pygame.display.set_mode((self.gs.SCREENWIDTH,self.gs.SCREENHEIGHT))
         self.surface1 = pygame.surface.Surface((self.gs.SCREENWIDTH,self.gs.SCREENHEIGHT))
-        self.load_save()
+        self.Score = Score()
+        # Loads highscore from score.dat
+        self.Score.import_highscore()
         self.frame_count = 0
 
         self.UI = UI(self.screen, self.gs.SCREENSIZE)
@@ -33,18 +35,15 @@ class Main:
     #Init Scenes
     def load_scenes(self):
         self.SceneManager = SceneManager('Menu')
-        self.Menu = Menu(self.screen, self.SceneManager, self.gs, self.UI) # Menu screen
+        self.Menu = Menu(self.screen, self.SceneManager, self.gs, self.UI, self.Score) # Menu screen
         self.Stage = Stage(self.screen, self.SceneManager) # Stage / Gameplay screen
         
         self.scenes = {'Menu':self.Menu, 'Stage':self.Stage}
 
     def load_stage(self):
-        self.Stage.load_main(self.gs, Score, CameraGroup, Cursor, Player, Bots, BotsRanged, BotsBig, 
+        self.Stage.load_main(self.gs, self.Score, CameraGroup, Cursor, Player, Bots, BotsRanged, BotsBig, 
                            Cannon, CannonDefault, CannonRapid, CannonSpread, Bullet, BotProjectile,
                            BotHandler, Collisions, UI, Particles)
-    # load highscores
-    def load_save(self):
-        return True
 
     # main loop
     def run(self):

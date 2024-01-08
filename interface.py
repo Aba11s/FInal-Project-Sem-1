@@ -60,11 +60,14 @@ class UI:
     def draw_title(self, screen, font):
         self.draw_text(screen, "FORTNITE", font, "White", (self.SCREENWIDTH // 2, 70))
 
+    def draw_highscore(self, screen, font, highscore):
+        self.draw_text(screen, "Highscore: " + str(highscore), font, "White", (self.SCREENWIDTH // 2, 150) )
+
     # Adds menu buttons
     def draw_menu_buttons(self):
         images = ["sprites/button_base-1.png","sprites/button_base-2.png"]
-        self.menu_start_button = self.button(images, (self.SCREENWIDTH//2, 250), 2, "START", self.font_subhead)
-        self.menu_exit_button = self.button(images, (self.SCREENWIDTH//2, 450), 2, "EXIT", self.font_subhead)
+        self.menu_start_button = self.button(images, (self.SCREENWIDTH//2, 280), 2, "START", self.font_subhead)
+        self.menu_exit_button = self.button(images, (self.SCREENWIDTH//2, 500), 2, "EXIT", self.font_subhead)
         return self.menu_start_button, self.menu_exit_button
 
     # Draw Pause Screen
@@ -79,14 +82,15 @@ class UI:
         return self.pause_restart_button, self.pause_resume_button
     
     # Lose screen
-    def draw_lose_title(self, screen, font, font2, font3, score):
+    def draw_lose_title(self, screen, font, font2, font3, score, highscore):
          loser_text = ["You_Lost","You_Lost","You_Lost","You_Lost","You_Lost","You_Lost",
                        "Game_Over","Game_over","Game_over","Game_over","Game_over","Game_over",
                        "Nice_Try","Nice_Try","Nice_Try","Nice_Try","Nice_Try","Nice_Try",
                        "PRO TIP: DON\'T DIE"]
          self.draw_text(screen, random.choice(loser_text), font, "White", (self.SCREENWIDTH // 2, 180))
          self.draw_text(screen, "Final Score: " + str(score), font2, "White", (self.SCREENWIDTH // 2, 350))
-         self.draw_text(screen, "Press Enter to continue", font3, "White", (self.SCREENWIDTH // 2, 520)) 
+         self.draw_text(screen, "Highscore :" + str(highscore), font2, "White", (self.SCREENWIDTH // 2, 450))
+         self.draw_text(screen, "Press Enter to continue", font3, "White", (self.SCREENWIDTH // 2, 720)) 
 
     # Hearts
     def draw_hearts(self, screen, lives):
@@ -111,6 +115,8 @@ class Button():
         self.text = font.render(text, True, "White")
         self.text_rect = self.text.get_rect(center = self.rect.center)
 
+        self.sfx = pygame.mixer.Sound("sfx/mouse_click.mp3")
+
     def update(self, mouse_pos):
         action = False
         if self.rect.collidepoint(mouse_pos):
@@ -118,6 +124,7 @@ class Button():
             if pygame.mouse.get_pressed()[0] and not self.clicked:
                 self.clicked = True
                 action = True
+                self.sfx.play()
         else:
             self.image_active = self.image
         if not pygame.mouse.get_pressed()[0]:

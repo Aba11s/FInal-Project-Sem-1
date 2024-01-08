@@ -89,6 +89,9 @@ class CannonDefault():
         self.is_reloading = False
         self.last_fired = 0
 
+        self.sfx = pygame.mixer.Sound("sfx/default_isolated.wav")
+        self.sfx.set_volume(0.5)
+
         self.d = 5
 
     # 10 deg angle calculations
@@ -117,6 +120,7 @@ class CannonDefault():
                 self.bg.add(self.Bullet(self.screen, player_pos, self.dv_1_1, self.bullet_speed, self.hp, self.dmg))
                 self.bg.add(self.Bullet(self.screen, player_pos, self.dv_1_2, self.bullet_speed, self.hp, self.dmg))
                 self.last_fired = pygame.time.get_ticks()
+                self.sfx.play()
 
     # fires bullet
     def fire(self, angle, dirvect, player_pos, alt = False):
@@ -150,6 +154,9 @@ class CannonRapid():
         self.angle_max = 5
         self.angle_min = -5
 
+        self.sfx = pygame.mixer.Sound("sfx/rapid_isolated.wav")
+        self.sfx.set_volume(0.3)
+
             
     def set_vector(self, angle, dev_mp = 1):
         self.deviation = random.randint(self.angle_min, self.angle_max) * dev_mp
@@ -181,9 +188,9 @@ class CannonRapid():
         if self.bullet_count and not self.is_reloading:
             if pygame.time.get_ticks() - self.last_fired > 1/self.f_fire_rate*1000:
                 self.bg.add(self.Bullet(self.screen, player_pos, self.set_angle, self.bullet_speed, self.hp, self.f_dmg))
-                self.bg.add(self.Bullet(self.screen, player_pos, self.set_angle, self.bullet_speed, self.hp, self.f_dmg))
                 self.bullet_count -= 1
                 self.last_fired = pygame.time.get_ticks()
+                self.sfx.play()
 
 
     def fire(self, angle, player_pos, alt = False):
@@ -219,6 +226,9 @@ class CannonSpread():
         self.angle_mp = 1.0
         self.vel_mp = 1.0
 
+        self.sfx = pygame.mixer.Sound("sfx/spread_isolated.wav")
+        self.sfx.set_volume(0.8)
+
     def set_vector(self, angle, angle_mp = 1.0):
         deviation = random.uniform(self.angle_min * angle_mp, self.angle_max * angle_mp)
         opp = math.sin(math.radians(-deviation - angle))
@@ -247,7 +257,8 @@ class CannonSpread():
                 self.last_fired = pygame.time.get_ticks()
                 for i in range(self.pellets):
                     self.bg.add(self.Bullet(self.screen, player_pos, self.set_vector(angle, self.f_angle_mp), self.set_vel(self.f_vel_mp), self.hp, self.dmg, self.lifetime, self.last_fired, self.f_slow_mp))
-    
+                    self.sfx.play()
+
     def fire(self, angle, player_pos, alt = False):
         self.add_bullet(angle, player_pos, alt)
     
